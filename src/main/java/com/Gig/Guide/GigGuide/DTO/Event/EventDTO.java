@@ -1,4 +1,4 @@
-package com.Gig.Guide.GigGuide.DTO;
+package com.Gig.Guide.GigGuide.DTO.Event;
 
 import lombok.*;
 import java.time.LocalDateTime;

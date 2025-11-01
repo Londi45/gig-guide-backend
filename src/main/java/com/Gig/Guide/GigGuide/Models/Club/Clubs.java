@@ -14,7 +14,7 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+
 public class Clubs extends BaseEntity implements Serializable  {
 
 
@@ -27,7 +27,6 @@ public class Clubs extends BaseEntity implements Serializable  {
     private String logoUrl;
     private String coverImageUrl;
     private String openingHours;
-    private String entryFee;
     private String dressCode;
     private boolean hasParking;
     private boolean hasVIPArea;
@@ -45,7 +44,7 @@ public class Clubs extends BaseEntity implements Serializable  {
     private Socials socials;
 
     // Owner relationship (many clubs can belong to one owner)
-    @ManyToOne
-    @JoinColumn(name = "owner_id")
-    private Owner owner;
+//    @ManyToOne
+//    @JoinColumn(name = "owner_id")
+//    private Owner owner;
 }

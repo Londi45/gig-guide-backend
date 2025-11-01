@@ -1,5 +1,6 @@
-package com.Gig.Guide.GigGuide.DTO;
+package com.Gig.Guide.GigGuide.DTO.Club;
 
+import com.Gig.Guide.GigGuide.Models.Club.Socials;
 import lombok.*;
 
 @Data
@@ -8,24 +9,20 @@ import lombok.*;
 @Builder
 public class ClubDTO {
 
-    private Long id;
+
     private String name;
     private String description;
     private String email;
     private String phone;
     private String website;
-    private int capacity;
+    private String logoUrl;
+    private String coverImageUrl;
     private String openingHours;
     private String dressCode;
     private boolean hasParking;
     private boolean hasVIPArea;
-    private String logoUrl;
-    private String coverImageUrl;
-
-    // Address fields
-    private String location;
-    private String city;
-    private String province;
-    private String country;
-    private String postalCode;
+    private int capacity;
+    private AddressDTO addressDTO;
+    private SocialsDTO socialsdto;
+//    private OwnerDTO ownerDTO;
 }

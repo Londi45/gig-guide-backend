@@ -4,12 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
-@MappedSuperclass // tells JPA this is a base class
+@MappedSuperclass
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public abstract class BaseEntity {
+public class BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
