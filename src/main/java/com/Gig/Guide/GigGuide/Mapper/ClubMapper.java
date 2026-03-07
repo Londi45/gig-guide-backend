@@ -9,7 +9,9 @@ import com.Gig.Guide.GigGuide.Models.Club.Address;
 import com.Gig.Guide.GigGuide.Models.Club.Clubs;
 import com.Gig.Guide.GigGuide.Models.Club.Owner;
 import com.Gig.Guide.GigGuide.Models.Club.Socials;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ClubMapper {
 
     public static ClubDTO mapToDTO(Clubs club) {

@@ -3,11 +3,13 @@ package com.Gig.Guide.GigGuide.DTO.Club;
 import com.Gig.Guide.GigGuide.Models.Club.Socials;
 import lombok.*;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ClubDTO {
+public class ClubDTO implements Serializable {
 
 
     private String name;
