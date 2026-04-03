@@ -1,6 +1,5 @@
 package com.Gig.Guide.GigGuide.DTO.Club;
 
-import com.Gig.Guide.GigGuide.Models.Club.Socials;
 import lombok.*;
 
 import java.io.Serializable;
@@ -11,7 +10,7 @@ import java.io.Serializable;
 @Builder
 public class ClubDTO implements Serializable {
 
-
+    private Long id;
     private String name;
     private String description;
     private String email;
@@ -20,11 +19,12 @@ public class ClubDTO implements Serializable {
     private String logoUrl;
     private String coverImageUrl;
     private String openingHours;
+    private String closingHours;
     private String dressCode;
     private boolean hasParking;
     private boolean hasVIPArea;
     private int capacity;
-    private AddressDTO addressDTO;
-    private SocialsDTO socialsdto;
-//    private OwnerDTO ownerDTO;
+    private boolean active; // isActive — using 'active' to avoid Lombok boolean naming issues
+    private AddressDTO address;
+    private SocialsDTO socials;
 }

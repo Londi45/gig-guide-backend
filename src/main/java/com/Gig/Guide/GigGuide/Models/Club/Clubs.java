@@ -1,6 +1,7 @@
 package com.Gig.Guide.GigGuide.Models.Club;
 
 import com.Gig.Guide.GigGuide.Models.BaseEntity;
+import com.Gig.Guide.GigGuide.Models.Users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,24 +28,24 @@ public class Clubs extends BaseEntity implements Serializable  {
     private String logoUrl;
     private String coverImageUrl;
     private String openingHours;
+    private String closingHours;
     private String dressCode;
     private boolean hasParking;
     private boolean hasVIPArea;
-    private boolean isActive;
     private int capacity;
 
-    // Address relationship
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_id")
     private Address address;
 
-    // Socials relationship
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "social_id")
     private Socials socials;
 
-    // Owner relationship (many clubs can belong to one owner)
-//    @ManyToOne
-//    @JoinColumn(name = "owner_id")
-//    private Owner owner;
+    // Club owner (linked User account)
+    @OneToOne
+    @JoinColumn(name = "owner_user_id")
+    private User owner;
 }

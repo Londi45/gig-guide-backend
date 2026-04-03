@@ -5,8 +5,8 @@ import com.Gig.Guide.GigGuide.Models.Club.Clubs;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -44,4 +44,15 @@ public class User implements Serializable {
     private Clubs club;
 
     private boolean isActive; // active or deactivated account
+
+    // Email verification
+    private String verificationToken;
+    private LocalDateTime verificationTokenExpiry;
+
+    @Builder.Default
+    private boolean isVerified = false;
+
+    // Password reset
+    private String passwordResetToken;
+    private LocalDateTime passwordResetTokenExpiry;
 }

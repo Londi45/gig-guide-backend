@@ -1,40 +1,34 @@
 package com.Gig.Guide.GigGuide.Service;
 
-import java.util.Optional;
-
-import com.Gig.Guide.GigGuide.Models.MyAppUser;
-import com.Gig.Guide.GigGuide.Repositories.MyAppUserRepository;
+import com.Gig.Guide.GigGuide.Repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import lombok.AllArgsConstructor;
+import java.util.List;
 
 @Service
-@AllArgsConstructor 
-public class MyAppUserService implements UserDetailsService{
-    
+public class MyAppUserService implements UserDetailsService {
+
     @Autowired
-    private MyAppUserRepository repository;
-    
+    private UserRepository userRepository;
+
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        
-        Optional<MyAppUser> user = repository.findByUsername(username);
-        if (user.isPresent()) {
-            var userObj = user.get();
-            return User.builder()
-                    .username(userObj.getUsername())
-                    .password(userObj.getPassword())
-                    .build();    
-        }else{
-            throw new UsernameNotFoundException(username);
-        }
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        com.Gig.Guide.GigGuide.Models.Users.User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+        List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+        );
+
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(user.getEmail())
+                .password(user.getPassword())
+                .authorities(authorities)
+                .build();
     }
-    
-    
-    
 }

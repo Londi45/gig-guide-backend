@@ -1,7 +1,10 @@
 package com.Gig.Guide.GigGuide.Repositories;
 
+import com.Gig.Guide.GigGuide.Enums.Role;
 import com.Gig.Guide.GigGuide.Models.Users.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -14,4 +17,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Check if email already exists
     boolean existsByEmail(String email);
+
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByVerificationToken(String token);
+
+    Optional<User> findByPasswordResetToken(String token);
+
+    List<User> findByClubId(Long clubId);
+
+    List<User> findByClubIdAndRole(Long clubId, Role role);
 }

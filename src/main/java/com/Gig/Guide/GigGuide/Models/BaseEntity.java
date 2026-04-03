@@ -2,13 +2,14 @@ package com.Gig.Guide.GigGuide.Models;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 public class BaseEntity {
 
     @Id
@@ -16,15 +17,11 @@ public class BaseEntity {
     private Long id;
 
     private LocalDateTime createdAt;
+
+
     private LocalDateTime updatedAt;
-    private boolean isActive;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        isActive = true;
-    }
-
+    private boolean active;
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
