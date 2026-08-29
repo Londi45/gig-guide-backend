@@ -62,7 +62,7 @@ public class EventController {
 
     @GetMapping("/club/{clubId}")
     public ResponseEntity<Page<EventDTO>> getEventsByClub(
-            @PathVariable Long clubId,
+            @PathVariable String clubId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         log.info("GET /api/events/club/{} - page={}, size={}", clubId, page, size);

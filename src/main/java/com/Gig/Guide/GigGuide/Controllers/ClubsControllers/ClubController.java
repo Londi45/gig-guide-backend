@@ -22,6 +22,15 @@ public class ClubController {
     @Autowired
     private ClubService clubService;
 
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ClubDTO> createClub(@RequestBody ClubDTO clubDTO) {
+        log.info("POST /api/clubs - name={}, email={}", clubDTO.getName(), clubDTO.getEmail());
+        ClubDTO created = clubService.createClub(clubDTO);
+        log.info("Club created - id={}, name={}", created.getId(), created.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
     @GetMapping
     public ResponseEntity<Page<ClubDTO>> getAllClubs(
             @RequestParam(defaultValue = "0") int page,
@@ -35,7 +44,7 @@ public class ClubController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ClubDTO> getClubById(@PathVariable Long id) {
+    public ResponseEntity<ClubDTO> getClubById(@PathVariable String id) {
         log.info("GET /api/clubs/{}", id);
         ClubDTO club = clubService.getClubById(id);
         log.info("Fetched club - id={}, name={}", club.getId(), club.getName());
@@ -44,7 +53,7 @@ public class ClubController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'CLUB_OWNER')")
-    public ResponseEntity<ClubDTO> updateClub(@PathVariable Long id, @RequestBody ClubDTO clubDTO) {
+    public ResponseEntity<ClubDTO> updateClub(@PathVariable String id, @RequestBody ClubDTO clubDTO) {
         log.info("PUT /api/clubs/{} - name={}", id, clubDTO.getName());
         ClubDTO updated = clubService.updateClub(id, clubDTO);
         log.info("Club updated - id={}", id);
@@ -53,7 +62,7 @@ public class ClubController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteClub(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteClub(@PathVariable String id) {
         log.info("DELETE /api/clubs/{}", id);
         clubService.deleteClub(id);
         log.info("Club deleted - id={}", id);
@@ -62,7 +71,7 @@ public class ClubController {
 
     @PatchMapping("/{id}/deactivate")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deactivateClub(@PathVariable Long id) {
+    public ResponseEntity<Void> deactivateClub(@PathVariable String id) {
         log.info("PATCH /api/clubs/{}/deactivate", id);
         clubService.deactivateClub(id);
         log.info("Club deactivated - id={}", id);

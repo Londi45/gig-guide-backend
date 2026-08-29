@@ -223,7 +223,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventDTO> getEventsByClub(Long clubId, Pageable pageable) {
+    public Page<EventDTO> getEventsByClub(String clubId, Pageable pageable) {
         return eventRepository.findByClubIdAndStatus(clubId, EventStatus.PUBLISHED, pageable)
                 .map(e -> EventMapper.toDTO(e, true));
     }
@@ -242,7 +242,7 @@ public class EventServiceImpl implements EventService {
         if (user.getClub() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is not linked to a club");
         }
-        Long clubId = user.getClub().getId();
+        String clubId = user.getClub().getId();
 
         if (status != null && startDate != null && endDate != null) {
             return eventRepository.findByClubIdAndStatusAndStartDateTimeBetween(clubId, status, startDate, endDate, pageable)

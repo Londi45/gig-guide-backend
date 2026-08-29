@@ -11,13 +11,18 @@ import com.Gig.Guide.GigGuide.Repositories.AddressRepo;
 import com.Gig.Guide.GigGuide.Repositories.ClubRepository;
 import com.Gig.Guide.GigGuide.Repositories.SocialsRepo;
 import com.Gig.Guide.GigGuide.Repositories.UserRepository;
+import com.Gig.Guide.GigGuide.Kafka.events.ClubCreatedEvent;
+import com.Gig.Guide.GigGuide.Kafka.producer.ClubEventProducer;
 import com.Gig.Guide.GigGuide.Service.ClubService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -39,12 +44,32 @@ public class ClubServiceImpl implements ClubService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ClubEventProducer clubEventProducer;
+
     @Override
     public ClubDTO createClub(ClubDTO clubDTO) {
+        log.info("Creating club - name={}, email={}", clubDTO.getName(), clubDTO.getEmail());
+
+        if (clubDTO.getName() == null || clubDTO.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Club name is required");
+        }
+
         Clubs club = ClubMapper.mapToEntity(clubDTO);
         club.setActive(true);
         Clubs saved = clubRepository.save(club);
-        log.info("Club added with id {} and name: {}", saved.getId(), saved.getName());
+        log.info("Club created - id={}, name={}", saved.getId(), saved.getName());
+
+        // Publish event to Kafka asynchronously — does not block the HTTP response
+        ClubCreatedEvent event = ClubCreatedEvent.builder()
+                .clubId(saved.getId())
+                .clubName(saved.getName())
+                .email(saved.getEmail())
+                .city(saved.getAddress() != null ? saved.getAddress().getCity() : null)
+                .createdAt(LocalDateTime.now())
+                .build();
+        clubEventProducer.publishClubCreated(event);
+
         return ClubMapper.mapToDTO(saved);
     }
 
@@ -57,7 +82,7 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public ClubDTO getClubById(Long id) {
+    public ClubDTO getClubById(String id) {
         log.info("Fetching club - id={}", id);
         Clubs club = clubRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));
@@ -66,7 +91,7 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public ClubDTO updateClub(Long id, ClubDTO clubDTO) {
+    public ClubDTO updateClub(String id, ClubDTO clubDTO) {
         log.info("Updating club - id={}", id);
         Clubs existingClub = clubRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));
@@ -127,7 +152,7 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public void deleteClub(Long id) {
+    public void deleteClub(String id) {
         log.info("Deleting club - id={}", id);
         Clubs club = clubRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));
@@ -136,7 +161,7 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public void deactivateClub(Long id) {
+    public void deactivateClub(String id) {
         log.info("Deactivating club - id={}", id);
         Clubs club = clubRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));

@@ -10,11 +10,11 @@ public interface ClubService {
 
     Page<ClubDTO> getAllClubs(Pageable pageable);
 
-    ClubDTO getClubById(Long id);
+    ClubDTO getClubById(String id);
 
-    ClubDTO updateClub(Long id, ClubDTO clubDTO);
+    ClubDTO updateClub(String id, ClubDTO clubDTO);
 
-    void deleteClub(Long id);
+    void deleteClub(String id);
 
-    void deactivateClub(Long id);
+    void deactivateClub(String id);
 }

@@ -14,6 +14,6 @@ public class UserResponseDTO {
     private String fullName;
     private String phoneNumber;
     private String role;
-    private Long clubId;
+    private String clubId;
     private boolean active;
 }

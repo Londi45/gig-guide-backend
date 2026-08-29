@@ -25,7 +25,7 @@ public class EventDTO {
     private boolean active;
 
     // Related club info
-    private Long clubId;
+    private String clubId;
     private String clubName;
 
     // Capacity and gender ratio

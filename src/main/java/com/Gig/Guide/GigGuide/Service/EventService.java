@@ -21,7 +21,7 @@ public interface EventService {
     // Public browsing
     Page<EventDTO> getPublishedEvents(Pageable pageable);
     EventDTO getEventById(Long id);
-    Page<EventDTO> getEventsByClub(Long clubId, Pageable pageable);
+    Page<EventDTO> getEventsByClub(String clubId, Pageable pageable);
     Page<EventDTO> getEventsByDateRange(LocalDateTime start, LocalDateTime end, Pageable pageable);
 
     // Dashboard

@@ -4,21 +4,24 @@ import com.Gig.Guide.GigGuide.Models.BaseEntity;
 import com.Gig.Guide.GigGuide.Models.Users.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.UuidGenerator;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "clubs")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+public class Clubs implements Serializable {
 
-public class Clubs extends BaseEntity implements Serializable  {
-
-
+    @Id
+    @UuidGenerator                          // Hibernate generates a UUID before INSERT
+    @Column(name = "id", updatable = false, nullable = false, length = 36)
+    private String id;
 
     private String name;
     private String description;
@@ -33,18 +36,23 @@ public class Clubs extends BaseEntity implements Serializable  {
     private boolean hasParking;
     private boolean hasVIPArea;
     private int capacity;
+    private boolean active;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_id")
     private Address address;
 
-
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "social_id")
     private Socials socials;
 
-    // Club owner (linked User account)
     @OneToOne
     @JoinColumn(name = "owner_user_id")
     private User owner;

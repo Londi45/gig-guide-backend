@@ -28,5 +28,5 @@ public class RegisterRequestDTO {
     @NotBlank
     private String role; // CLUB_OWNER or STAFF — validated in service layer
 
-    private Long clubId; // required when role is STAFF
+    private String clubId; // required when role is STAFF
 }

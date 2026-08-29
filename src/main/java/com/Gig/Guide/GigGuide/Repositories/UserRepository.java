@@ -24,7 +24,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByPasswordResetToken(String token);
 
-    List<User> findByClubId(Long clubId);
+    List<User> findByClubId(String clubId);
 
-    List<User> findByClubIdAndRole(Long clubId, Role role);
+    List<User> findByClubIdAndRole(String clubId, Role role);
 }

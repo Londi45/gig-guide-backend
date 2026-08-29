@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface ClubRepository extends JpaRepository<Clubs, Long> {
+public interface ClubRepository extends JpaRepository<Clubs, String> {
 
     Optional<Clubs> findByName(String name);
 
@@ -17,5 +17,5 @@ public interface ClubRepository extends JpaRepository<Clubs, Long> {
 
     Page<Clubs> findByActiveTrue(Pageable pageable);
 
-    Optional<Clubs> findByIdAndActiveTrue(Long id);
+    Optional<Clubs> findByIdAndActiveTrue(String id);
 }

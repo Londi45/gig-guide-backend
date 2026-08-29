@@ -19,17 +19,17 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findByStartDateTimeAfter(LocalDateTime dateTime);
 
     // Paginated queries
-    Page<Event> findByClubIdAndStatus(Long clubId, EventStatus status, Pageable pageable);
+    Page<Event> findByClubIdAndStatus(String clubId, EventStatus status, Pageable pageable);
 
     Page<Event> findByStatusAndStartDateTimeAfter(EventStatus status, LocalDateTime now, Pageable pageable);
 
-    Page<Event> findByClubIdAndStartDateTimeBetween(Long clubId, LocalDateTime start, LocalDateTime end, Pageable pageable);
+    Page<Event> findByClubIdAndStartDateTimeBetween(String clubId, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
-    Page<Event> findByClubId(Long clubId, Pageable pageable);
+    Page<Event> findByClubId(String clubId, Pageable pageable);
 
-    Page<Event> findByClubIdAndStatusAndStartDateTimeBetween(Long clubId, EventStatus status, LocalDateTime start, LocalDateTime end, Pageable pageable);
+    Page<Event> findByClubIdAndStatusAndStartDateTimeBetween(String clubId, EventStatus status, LocalDateTime start, LocalDateTime end, Pageable pageable);
 
-    Page<Event> findByStatusAndStartDateTimeAfterAndClubId(EventStatus status, LocalDateTime now, Long clubId, Pageable pageable);
+    Page<Event> findByStatusAndStartDateTimeAfterAndClubId(EventStatus status, LocalDateTime now, String clubId, Pageable pageable);
 
     Page<Event> findByStatusAndStartDateTimeBetween(EventStatus status, LocalDateTime start, LocalDateTime end, Pageable pageable);
 }
