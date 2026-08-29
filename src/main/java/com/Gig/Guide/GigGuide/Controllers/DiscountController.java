@@ -4,6 +4,7 @@ import com.Gig.Guide.GigGuide.DTO.Event.DiscountDTO;
 import com.Gig.Guide.GigGuide.Exceptions.ResourceNotFoundException;
 import com.Gig.Guide.GigGuide.Repositories.UserRepository;
 import com.Gig.Guide.GigGuide.Service.EventService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/events/{eventId}/discounts")
 @CrossOrigin("*")
@@ -35,7 +37,10 @@ public class DiscountController {
             @RequestBody DiscountDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createDiscount(eventId, dto, userId));
+        log.info("POST /api/events/{}/discounts - userId={}, discountType={}", eventId, userId, dto.getDiscountType());
+        DiscountDTO created = eventService.createDiscount(eventId, dto, userId);
+        log.info("Discount created - id={}, eventId={}", created.getId(), eventId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{discountId}")
@@ -46,7 +51,10 @@ public class DiscountController {
             @RequestBody DiscountDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(eventService.updateDiscount(discountId, dto, userId));
+        log.info("PUT /api/events/{}/discounts/{} - userId={}", eventId, discountId, userId);
+        DiscountDTO updated = eventService.updateDiscount(discountId, dto, userId);
+        log.info("Discount updated - id={}", discountId);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{discountId}")
@@ -56,7 +64,9 @@ public class DiscountController {
             @PathVariable Long discountId,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
+        log.info("DELETE /api/events/{}/discounts/{} - userId={}", eventId, discountId, userId);
         eventService.deleteDiscount(discountId, userId);
+        log.info("Discount deleted - id={}", discountId);
         return ResponseEntity.noContent().build();
     }
 }

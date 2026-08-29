@@ -12,6 +12,7 @@ import com.Gig.Guide.GigGuide.Models.Event.*;
 import com.Gig.Guide.GigGuide.Models.Users.User;
 import com.Gig.Guide.GigGuide.Repositories.*;
 import com.Gig.Guide.GigGuide.Service.EventService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class EventServiceImpl implements EventService {
 
@@ -89,6 +91,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventDTO createEvent(EventDTO dto, Long userId) {
+        log.info("Creating event - userId={}, name={}, clubId={}", userId, dto.getName(), dto.getClubId());
         User user = getUser(userId);
 
         Clubs club;
@@ -137,11 +140,14 @@ public class EventServiceImpl implements EventService {
                 .club(club)
                 .build();
 
-        return EventMapper.toDTO(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        log.info("Event created - id={}, name={}, clubId={}, status={}", saved.getId(), saved.getName(), saved.getClub().getId(), saved.getStatus());
+        return EventMapper.toDTO(saved);
     }
 
     @Override
     public EventDTO updateEvent(Long eventId, EventDTO dto, Long userId) {
+        log.info("Updating event - eventId={}, userId={}", eventId, userId);
         Event event = getEvent(eventId);
         User user = getUser(userId);
         assertClubOwnership(event, user);
@@ -176,11 +182,14 @@ public class EventServiceImpl implements EventService {
             event.setFemaleRatio(dto.getFemaleRatio());
         }
 
-        return EventMapper.toDTO(eventRepository.save(event));
+        Event updated = eventRepository.save(event);
+        log.info("Event updated - id={}", eventId);
+        return EventMapper.toDTO(updated);
     }
 
     @Override
     public void deleteEvent(Long eventId, Long userId) {
+        log.info("Deleting event - eventId={}, userId={}", eventId, userId);
         Event event = getEvent(eventId);
         User user = getUser(userId);
 
@@ -190,6 +199,7 @@ public class EventServiceImpl implements EventService {
 
         assertClubOwnership(event, user);
         eventRepository.delete(event);
+        log.info("Event deleted - id={}", eventId);
     }
 
     // ─── Public Browsing ─────────────────────────────────────────────────────
@@ -253,6 +263,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventDTO transitionStatus(Long eventId, EventStatus newStatus, Long userId) {
+        log.info("Transitioning event status - eventId={}, userId={}, newStatus={}", eventId, userId, newStatus);
         Event event = getEvent(eventId);
         User user = getUser(userId);
         assertClubOwnership(event, user);
@@ -263,13 +274,16 @@ public class EventServiceImpl implements EventService {
         }
 
         event.setStatus(newStatus);
-        return EventMapper.toDTO(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        log.info("Event status changed - id={}, status={}", eventId, newStatus);
+        return EventMapper.toDTO(saved);
     }
 
     // ─── Entry Types ─────────────────────────────────────────────────────────
 
     @Override
     public EntryTypeDTO createEntryType(Long eventId, EntryTypeDTO dto, Long userId) {
+        log.info("Creating entry type - eventId={}, userId={}, name={}", eventId, userId, dto.getName());
         Event event = getEvent(eventId);
         User user = getUser(userId);
         assertClubOwnership(event, user);
@@ -289,11 +303,14 @@ public class EventServiceImpl implements EventService {
                 .event(event)
                 .build();
 
-        return EventMapper.toEntryTypeDTO(entryTypeRepository.save(entryType));
+        EntryTypeDTO created = EventMapper.toEntryTypeDTO(entryTypeRepository.save(entryType));
+        log.info("Entry type created - id={}, eventId={}", created.getId(), eventId);
+        return created;
     }
 
     @Override
     public EntryTypeDTO updateEntryType(Long entryTypeId, EntryTypeDTO dto, Long userId) {
+        log.info("Updating entry type - entryTypeId={}, userId={}", entryTypeId, userId);
         EntryType entryType = entryTypeRepository.findById(entryTypeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Entry type not found"));
         User user = getUser(userId);
@@ -309,22 +326,27 @@ public class EventServiceImpl implements EventService {
         if (dto.getDescription() != null) entryType.setDescription(dto.getDescription());
         if (dto.getAvailableQuantity() >= 0) entryType.setAvailableQuantity(dto.getAvailableQuantity());
 
-        return EventMapper.toEntryTypeDTO(entryTypeRepository.save(entryType));
+        EntryTypeDTO updated = EventMapper.toEntryTypeDTO(entryTypeRepository.save(entryType));
+        log.info("Entry type updated - id={}", entryTypeId);
+        return updated;
     }
 
     @Override
     public void deleteEntryType(Long entryTypeId, Long userId) {
+        log.info("Deleting entry type - entryTypeId={}, userId={}", entryTypeId, userId);
         EntryType entryType = entryTypeRepository.findById(entryTypeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Entry type not found"));
         User user = getUser(userId);
         assertClubOwnership(entryType.getEvent(), user);
         entryTypeRepository.delete(entryType);
+        log.info("Entry type deleted - id={}", entryTypeId);
     }
 
     // ─── Discounts ───────────────────────────────────────────────────────────
 
     @Override
     public DiscountDTO createDiscount(Long eventId, DiscountDTO dto, Long userId) {
+        log.info("Creating discount - eventId={}, userId={}, type={}", eventId, userId, dto.getDiscountType());
         Event event = getEvent(eventId);
         User user = getUser(userId);
         assertClubOwnership(event, user);
@@ -346,11 +368,14 @@ public class EventServiceImpl implements EventService {
                 .event(event)
                 .build();
 
-        return EventMapper.toDiscountDTO(discountRepository.save(discount));
+        DiscountDTO created = EventMapper.toDiscountDTO(discountRepository.save(discount));
+        log.info("Discount created - id={}, eventId={}", created.getId(), eventId);
+        return created;
     }
 
     @Override
     public DiscountDTO updateDiscount(Long discountId, DiscountDTO dto, Long userId) {
+        log.info("Updating discount - discountId={}, userId={}", discountId, userId);
         Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
         User user = getUser(userId);
@@ -372,22 +397,27 @@ public class EventServiceImpl implements EventService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Discount end time must be after start time");
         }
 
-        return EventMapper.toDiscountDTO(discountRepository.save(discount));
+        DiscountDTO updated = EventMapper.toDiscountDTO(discountRepository.save(discount));
+        log.info("Discount updated - id={}", discountId);
+        return updated;
     }
 
     @Override
     public void deleteDiscount(Long discountId, Long userId) {
+        log.info("Deleting discount - discountId={}, userId={}", discountId, userId);
         Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Discount not found"));
         User user = getUser(userId);
         assertClubOwnership(discount.getEvent(), user);
         discountRepository.delete(discount);
+        log.info("Discount deleted - id={}", discountId);
     }
 
     // ─── Live Attendance ─────────────────────────────────────────────────────
 
     @Override
     public Map<String, Object> checkIn(Long eventId, String gender, Long userId) {
+        log.info("Check-in - eventId={}, userId={}, gender={}", eventId, userId, gender);
         Event event = getEvent(eventId);
         User user = getUser(userId);
         assertClubOwnership(event, user);
@@ -408,11 +438,14 @@ public class EventServiceImpl implements EventService {
         checkInAuditRepository.save(audit);
 
         Event saved = eventRepository.save(event);
-        return buildAttendanceMap(saved);
+        Map<String, Object> result = buildAttendanceMap(saved);
+        log.info("Check-in recorded - eventId={}, gender={}, liveTotal={}", eventId, gender, result.get("liveTotalCount"));
+        return result;
     }
 
     @Override
     public Map<String, Object> checkOut(Long eventId, String gender, Long userId) {
+        log.info("Check-out - eventId={}, userId={}, gender={}", eventId, userId, gender);
         Event event = getEvent(eventId);
         User user = getUser(userId);
         assertClubOwnership(event, user);
@@ -438,8 +471,10 @@ public class EventServiceImpl implements EventService {
                 .build();
         checkInAuditRepository.save(audit);
 
-        Event saved = eventRepository.save(event);
-        return buildAttendanceMap(saved);
+        Event savedCheckOut = eventRepository.save(event);
+        Map<String, Object> result = buildAttendanceMap(savedCheckOut);
+        log.info("Check-out recorded - eventId={}, gender={}, liveTotal={}", eventId, gender, result.get("liveTotalCount"));
+        return result;
     }
 
     private Map<String, Object> buildAttendanceMap(Event event) {
@@ -469,6 +504,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public void assignStaff(Long eventId, Long staffUserId, Long requesterId) {
+        log.info("Assigning staff - eventId={}, staffUserId={}, requesterId={}", eventId, staffUserId, requesterId);
         User requester = getUser(requesterId);
         if (requester.getRole() != Role.CLUB_OWNER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only club owners can assign staff");
@@ -496,11 +532,15 @@ public class EventServiceImpl implements EventService {
                     .user(staffUser)
                     .build();
             staffAssignmentRepository.save(assignment);
+            log.info("Staff assigned - eventId={}, staffUserId={}", eventId, staffUserId);
+        } else {
+            log.info("Staff already assigned - eventId={}, staffUserId={}", eventId, staffUserId);
         }
     }
 
     @Override
     public void removeStaffAssignment(Long eventId, Long staffUserId, Long requesterId) {
+        log.info("Removing staff assignment - eventId={}, staffUserId={}, requesterId={}", eventId, staffUserId, requesterId);
         User requester = getUser(requesterId);
         if (requester.getRole() != Role.CLUB_OWNER) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only club owners can remove staff assignments");

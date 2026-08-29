@@ -6,6 +6,7 @@ import com.Gig.Guide.GigGuide.Exceptions.ResourceNotFoundException;
 import com.Gig.Guide.GigGuide.Repositories.UserRepository;
 import com.Gig.Guide.GigGuide.Service.EventService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/events/{eventId}/attendance")
 @CrossOrigin("*")
@@ -41,7 +43,9 @@ public class AttendanceController {
             @Valid @RequestBody CheckInRequestDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(eventService.checkIn(eventId, dto.getGender(), userId));
+        log.info("Check-in recorded event {} - userId={}, gender={}", eventId, userId, dto.getGender());
+        Map<String, Object> result = eventService.checkIn(eventId, dto.getGender(), userId);
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/check-out")
@@ -51,7 +55,9 @@ public class AttendanceController {
             @Valid @RequestBody CheckInRequestDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(eventService.checkOut(eventId, dto.getGender(), userId));
+        log.info("Check-out recorded - eventId={} - userId={}, gender={}", eventId, userId, dto.getGender());
+        Map<String, Object> result = eventService.checkOut(eventId, dto.getGender(), userId);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/audit")
@@ -63,6 +69,8 @@ public class AttendanceController {
             @RequestParam(defaultValue = "20") int size) {
         Long userId = getCurrentUserId(authentication);
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(eventService.getAuditLog(eventId, userId, pageable));
+        Page<CheckInAuditDTO> result = eventService.getAuditLog(eventId, userId, pageable);
+        log.info("Audit log fetched - eventId={}, entries={}", eventId, result.getNumberOfElements());
+        return ResponseEntity.ok(result);
     }
 }

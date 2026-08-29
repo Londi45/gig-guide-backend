@@ -50,19 +50,24 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     public Page<ClubDTO> getAllClubs(Pageable pageable) {
-        return clubRepository.findByActiveTrue(pageable)
-                .map(ClubMapper::mapToDTO);
+        log.info("Fetching all active clubs - page={}, size={}", pageable.getPageNumber(), pageable.getPageSize());
+        Page<ClubDTO> result = clubRepository.findByActiveTrue(pageable).map(ClubMapper::mapToDTO);
+        log.info("Fetched {} clubs (total={})", result.getNumberOfElements(), result.getTotalElements());
+        return result;
     }
 
     @Override
     public ClubDTO getClubById(Long id) {
+        log.info("Fetching club - id={}", id);
         Clubs club = clubRepository.findByIdAndActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));
+        log.info("Club found - id={}, name={}", club.getId(), club.getName());
         return ClubMapper.mapToDTO(club);
     }
 
     @Override
     public ClubDTO updateClub(Long id, ClubDTO clubDTO) {
+        log.info("Updating club - id={}", id);
         Clubs existingClub = clubRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));
 
@@ -117,18 +122,22 @@ public class ClubServiceImpl implements ClubService {
         }
 
         clubRepository.save(existingClub);
+        log.info("Club updated - id={}", id);
         return ClubMapper.mapToDTO(existingClub);
     }
 
     @Override
     public void deleteClub(Long id) {
+        log.info("Deleting club - id={}", id);
         Clubs club = clubRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));
         clubRepository.delete(club);
+        log.info("Club deleted - id={}", id);
     }
 
     @Override
     public void deactivateClub(Long id) {
+        log.info("Deactivating club - id={}", id);
         Clubs club = clubRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Club not found"));
         club.setActive(false);
@@ -138,5 +147,6 @@ public class ClubServiceImpl implements ClubService {
         List<User> users = userRepository.findByClubId(id);
         users.forEach(u -> u.setActive(false));
         userRepository.saveAll(users);
+        log.info("Club and {} linked users deactivated - clubId={}", users.size(), id);
     }
 }

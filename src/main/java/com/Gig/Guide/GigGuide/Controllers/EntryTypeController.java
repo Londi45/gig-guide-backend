@@ -4,6 +4,7 @@ import com.Gig.Guide.GigGuide.DTO.Event.EntryTypeDTO;
 import com.Gig.Guide.GigGuide.Exceptions.ResourceNotFoundException;
 import com.Gig.Guide.GigGuide.Repositories.UserRepository;
 import com.Gig.Guide.GigGuide.Service.EventService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/events/{eventId}/entry-types")
 @CrossOrigin("*")
@@ -35,7 +37,10 @@ public class EntryTypeController {
             @RequestBody EntryTypeDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createEntryType(eventId, dto, userId));
+        log.info("POST /api/events/{}/entry-types - userId={}, name={}, price={}", eventId, userId, dto.getName(), dto.getPrice());
+        EntryTypeDTO created = eventService.createEntryType(eventId, dto, userId);
+        log.info("Entry type created - id={}, eventId={}", created.getId(), eventId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{entryTypeId}")
@@ -46,7 +51,10 @@ public class EntryTypeController {
             @RequestBody EntryTypeDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(eventService.updateEntryType(entryTypeId, dto, userId));
+        log.info("PUT /api/events/{}/entry-types/{} - userId={}", eventId, entryTypeId, userId);
+        EntryTypeDTO updated = eventService.updateEntryType(entryTypeId, dto, userId);
+        log.info("Entry type updated - id={}", entryTypeId);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{entryTypeId}")
@@ -56,7 +64,9 @@ public class EntryTypeController {
             @PathVariable Long entryTypeId,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
+        log.info("DELETE /api/events/{}/entry-types/{} - userId={}", eventId, entryTypeId, userId);
         eventService.deleteEntryType(entryTypeId, userId);
+        log.info("Entry type deleted - id={}", entryTypeId);
         return ResponseEntity.noContent().build();
     }
 }

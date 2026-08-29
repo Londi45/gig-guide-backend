@@ -7,6 +7,7 @@ import com.Gig.Guide.GigGuide.Exceptions.ResourceNotFoundException;
 import com.Gig.Guide.GigGuide.Repositories.UserRepository;
 import com.Gig.Guide.GigGuide.Service.UserService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin("*")
@@ -39,7 +41,10 @@ public class UserController {
             @Valid @RequestBody RegisterRequestDTO dto,
             Authentication authentication) {
         Long requesterId = getCurrentUserId(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createStaff(dto, requesterId));
+        log.info("POST /api/users/staff - requesterId={}, newStaffEmail={}", requesterId, dto.getEmail());
+        UserResponseDTO response = userService.createStaff(dto, requesterId);
+        log.info("Staff created successfully - staffId={}, email={}", response.getId(), response.getEmail());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PatchMapping("/staff/{userId}/deactivate")
@@ -48,7 +53,9 @@ public class UserController {
             @PathVariable Long userId,
             Authentication authentication) {
         Long requesterId = getCurrentUserId(authentication);
+        log.info("PATCH /api/users/staff/{}/deactivate - requesterId={}", userId, requesterId);
         userService.deactivateStaff(userId, requesterId);
+        log.info("Staff deactivated - staffId={}", userId);
         return ResponseEntity.ok().build();
     }
 
@@ -58,13 +65,19 @@ public class UserController {
             @RequestBody UpdateProfileDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(userService.updateProfile(userId, dto));
+        log.info("PUT /api/users/profile - userId={}", userId);
+        UserResponseDTO response = userService.updateProfile(userId, dto);
+        log.info("Profile updated - userId={}", userId);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/staff")
     @PreAuthorize("hasAnyRole('CLUB_OWNER', 'STAFF')")
     public ResponseEntity<List<UserResponseDTO>> getStaff(Authentication authentication) {
         Long requesterId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(userService.getStaffByClub(requesterId));
+        log.info("GET /api/users/staff - requesterId={}", requesterId);
+        List<UserResponseDTO> staff = userService.getStaffByClub(requesterId);
+        log.info("Fetched {} staff members for requesterId={}", staff.size(), requesterId);
+        return ResponseEntity.ok(staff);
     }
 }

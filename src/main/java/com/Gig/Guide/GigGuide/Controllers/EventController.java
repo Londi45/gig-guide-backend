@@ -7,6 +7,7 @@ import com.Gig.Guide.GigGuide.Exceptions.ResourceNotFoundException;
 import com.Gig.Guide.GigGuide.Repositories.UserRepository;
 import com.Gig.Guide.GigGuide.Service.EventService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/events")
 @CrossOrigin("*")
@@ -43,13 +45,19 @@ public class EventController {
     public ResponseEntity<Page<EventDTO>> getPublishedEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("GET /api/events - page={}, size={}", page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("startDateTime").ascending());
-        return ResponseEntity.ok(eventService.getPublishedEvents(pageable));
+        Page<EventDTO> result = eventService.getPublishedEvents(pageable);
+        log.info("Fetched {} published events (total={})", result.getNumberOfElements(), result.getTotalElements());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<EventDTO> getEventById(@PathVariable Long id) {
-        return ResponseEntity.ok(eventService.getEventById(id));
+        log.info("GET /api/events/{}", id);
+        EventDTO event = eventService.getEventById(id);
+        log.info("Fetched event - id={}, name={}", event.getId(), event.getName());
+        return ResponseEntity.ok(event);
     }
 
     @GetMapping("/club/{clubId}")
@@ -57,8 +65,11 @@ public class EventController {
             @PathVariable Long clubId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("GET /api/events/club/{} - page={}, size={}", clubId, page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("startDateTime").ascending());
-        return ResponseEntity.ok(eventService.getEventsByClub(clubId, pageable));
+        Page<EventDTO> result = eventService.getEventsByClub(clubId, pageable);
+        log.info("Fetched {} events for clubId={} (total={})", result.getNumberOfElements(), clubId, result.getTotalElements());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/dashboard")
@@ -71,29 +82,40 @@ public class EventController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long userId = getCurrentUserId(authentication);
+        log.info("GET /api/events/dashboard - userId={}, status={}, startDate={}, endDate={}", userId, status, startDate, endDate);
         Pageable pageable = PageRequest.of(page, size, Sort.by("startDateTime").ascending());
-        return ResponseEntity.ok(eventService.getDashboardEvents(userId, status, startDate, endDate, pageable));
+        Page<EventDTO> result = eventService.getDashboardEvents(userId, status, startDate, endDate, pageable);
+        log.info("Dashboard fetched {} events for userId={}", result.getNumberOfElements(), userId);
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('CLUB_OWNER', 'STAFF', 'ADMIN')")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO dto, Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(eventService.createEvent(dto, userId));
+        log.info("POST /api/events - userId={}, eventName={}, clubId={}", userId, dto.getName(), dto.getClubId());
+        EventDTO created = eventService.createEvent(dto, userId);
+        log.info("Event created - id={}, name={}, clubId={}", created.getId(), created.getName(), created.getClubId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('CLUB_OWNER', 'STAFF', 'ADMIN')")
     public ResponseEntity<EventDTO> updateEvent(@PathVariable Long id, @RequestBody EventDTO dto, Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(eventService.updateEvent(id, dto, userId));
+        log.info("PUT /api/events/{} - userId={}", id, userId);
+        EventDTO updated = eventService.updateEvent(id, dto, userId);
+        log.info("Event updated - id={}", id);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('CLUB_OWNER', 'ADMIN')")
     public ResponseEntity<Void> deleteEvent(@PathVariable Long id, Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
+        log.info("DELETE /api/events/{} - userId={}", id, userId);
         eventService.deleteEvent(id, userId);
+        log.info("Event deleted - id={}", id);
         return ResponseEntity.noContent().build();
     }
 
@@ -104,6 +126,9 @@ public class EventController {
             @Valid @RequestBody StatusTransitionRequestDTO dto,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(eventService.transitionStatus(id, dto.getStatus(), userId));
+        log.info("PATCH /api/events/{}/status - userId={}, newStatus={}", id, userId, dto.getStatus());
+        EventDTO updated = eventService.transitionStatus(id, dto.getStatus(), userId);
+        log.info("Event status updated - id={}, status={}", id, updated.getStatus());
+        return ResponseEntity.ok(updated);
     }
 }

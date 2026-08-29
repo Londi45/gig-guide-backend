@@ -4,6 +4,7 @@ import com.Gig.Guide.GigGuide.DTO.Event.EventDTO;
 import com.Gig.Guide.GigGuide.Exceptions.ResourceNotFoundException;
 import com.Gig.Guide.GigGuide.Repositories.UserRepository;
 import com.Gig.Guide.GigGuide.Service.EventService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/events/{eventId}/image")
 @CrossOrigin("*")
@@ -38,7 +40,11 @@ public class ImageController {
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
-        return ResponseEntity.ok(eventService.uploadImage(eventId, file, userId));
+        log.info("POST /api/events/{}/image/upload - userId={}, filename={}, size={}bytes",
+                eventId, userId, file.getOriginalFilename(), file.getSize());
+        EventDTO updated = eventService.uploadImage(eventId, file, userId);
+        log.info("Image uploaded for eventId={}, url={}", eventId, updated.getImageUrl());
+        return ResponseEntity.ok(updated);
     }
 
     @PutMapping("/url")
@@ -49,6 +55,9 @@ public class ImageController {
             Authentication authentication) {
         Long userId = getCurrentUserId(authentication);
         String url = body.get("url");
-        return ResponseEntity.ok(eventService.setImageUrl(eventId, url, userId));
+        log.info("PUT /api/events/{}/image/url - userId={}, url={}", eventId, userId, url);
+        EventDTO updated = eventService.setImageUrl(eventId, url, userId);
+        log.info("Image URL set for eventId={}", eventId);
+        return ResponseEntity.ok(updated);
     }
 }

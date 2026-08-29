@@ -27,32 +27,45 @@ public class ClubController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "name") String sort) {
+        log.info("GET /api/clubs - page={}, size={}, sort={}", page, size, sort);
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort).ascending());
-        return ResponseEntity.ok(clubService.getAllClubs(pageable));
+        Page<ClubDTO> result = clubService.getAllClubs(pageable);
+        log.info("Fetched {} clubs (total={})", result.getNumberOfElements(), result.getTotalElements());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ClubDTO> getClubById(@PathVariable Long id) {
-        return ResponseEntity.ok(clubService.getClubById(id));
+        log.info("GET /api/clubs/{}", id);
+        ClubDTO club = clubService.getClubById(id);
+        log.info("Fetched club - id={}, name={}", club.getId(), club.getName());
+        return ResponseEntity.ok(club);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'CLUB_OWNER')")
     public ResponseEntity<ClubDTO> updateClub(@PathVariable Long id, @RequestBody ClubDTO clubDTO) {
-        return ResponseEntity.ok(clubService.updateClub(id, clubDTO));
+        log.info("PUT /api/clubs/{} - name={}", id, clubDTO.getName());
+        ClubDTO updated = clubService.updateClub(id, clubDTO);
+        log.info("Club updated - id={}", id);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteClub(@PathVariable Long id) {
+        log.info("DELETE /api/clubs/{}", id);
         clubService.deleteClub(id);
+        log.info("Club deleted - id={}", id);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/deactivate")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deactivateClub(@PathVariable Long id) {
+        log.info("PATCH /api/clubs/{}/deactivate", id);
         clubService.deactivateClub(id);
+        log.info("Club deactivated - id={}", id);
         return ResponseEntity.ok().build();
     }
 }
