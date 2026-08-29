@@ -48,6 +48,10 @@ GigGuide is a backend REST API for managing gigs, events, clubs, and attendees. 
 
 ### Testing
 - **Spring Boot Test** — unit and integration testing
+- **JUnit 5** — test framework
+- **Mockito** — mocking framework for unit tests
+- **MockMvc** — Spring MVC test support (no server required)
+- **Spring Security Test** — `@WithMockUser` for role-based test scenarios
 
 ---
 
@@ -112,7 +116,7 @@ src/main/java/com/Gig/Guide/GigGuide/
   "fullName": "Jane Doe",
   "phoneNumber": "+27829876543",
   "role": "STAFF",
-  "clubId": 1
+  "clubId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 }
 ```
 
@@ -774,7 +778,7 @@ ClubServiceImpl.createClub()
 
 ```json
 {
-  "clubId": 1,
+  "clubId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "clubName": "Club Havana",
   "email": "info@havana.co.za",
   "city": "Cape Town",
@@ -846,6 +850,69 @@ This starts:
 - **Zookeeper** on port `2181`
 - **Kafka broker** on port `9092`
 - **Kafka UI** at `http://localhost:8090` — browse topics and messages visually
+
+---
+
+## Testing
+
+The project has two layers of tests for the Club API.
+
+### Unit Tests — `ClubControllerTest`
+
+Uses `@WebMvcTest` to load only the web layer — no database, no Kafka. `ClubService` is mocked with Mockito. Tests cover:
+
+A `TestSecurityConfig` (in `src/test/java/.../Config/`) replaces the production `SecurityConfig` for the web slice. It is annotated `@TestConfiguration` so it is never picked up by full `@SpringBootTest` contexts — it only activates when explicitly `@Import`ed. This avoids conflicting `SecurityFilterChain` beans during integration tests. `JwtTokenUtil` and `MyAppUserService` are `@MockBean`'d to satisfy `JwtAuthFilter`'s wiring without needing actual JWT infrastructure.
+
+| Test | What it verifies |
+|------|-----------------|
+| `createClub_adminRole_returns201` | ADMIN can create a club, response is 201 with full DTO |
+| `createClub_nonAdminRole_returns403` | Non-admin roles (e.g. CLUB_OWNER) are rejected with 403 |
+| `createClub_unauthenticated_returns401` | Unauthenticated requests get 401 |
+| `getAllClubs_returns200WithPage` | Paginated response shape is correct |
+| `getAllClubs_noClubs_returnsEmptyPage` | Empty page returns 200 with empty content array |
+| `getAllClubs_noAuth_stillReturns200` | Public endpoint — no auth required |
+| `getClubById_validId_returns200` | Returns correct club DTO for known id |
+| `getClubById_unknownId_returns404` | `ResourceNotFoundException` maps to 404 |
+| `updateClub_adminRole_returns200` | ADMIN can update |
+| `updateClub_clubOwnerRole_returns200` | CLUB_OWNER can update |
+| `updateClub_staffRole_returns403` | STAFF role is rejected with 403 |
+| `deleteClub_adminRole_returns204` | ADMIN gets 204 No Content |
+| `deleteClub_clubOwnerRole_returns403` | CLUB_OWNER cannot delete |
+| `deleteClub_notFound_returns404` | Delete of unknown id returns 404 |
+| `deactivateClub_adminRole_returns200` | ADMIN deactivates successfully |
+| `deactivateClub_clubOwnerRole_returns403` | CLUB_OWNER cannot deactivate |
+| `deactivateClub_notFound_returns404` | Deactivate unknown id returns 404 |
+
+Run unit tests only:
+```bash
+./mvnw test -Dtest=ClubControllerTest
+```
+
+### Integration Tests — `ClubControllerIntegrationTest`
+
+Uses `@SpringBootTest` + `@AutoConfigureMockMvc` to load the full application context against a real PostgreSQL database. Each test runs in a `@Transactional` context that is **rolled back** after completion, so no data is left behind.
+
+Kafka listeners are disabled in the `test` profile (`spring.kafka.listener.auto-startup=false`) so a broker is not required to run these tests.
+
+| Test | What it verifies |
+|------|-----------------|
+| `createClub_persistsToDb_returnsUuid` | Club is saved to DB, id is a valid UUID |
+| `getAllClubs_returnsPage` | Paginated response with real data |
+| `getClubById_returnsClub` | Fetch created club by its UUID |
+| `getClubById_unknownId_returns404` | Unknown id returns 404 |
+| `updateClub_updatesFields` | Name and capacity are updated in the DB |
+| `deleteClub_removesFromDb` | Club is removed from DB, subsequent GET returns 404 |
+| `deactivateClub_setsActiveFalse` | Club `active` flag is set to `false` in DB |
+
+Run integration tests only:
+```bash
+./mvnw test -Dtest=ClubControllerIntegrationTest -Dspring.profiles.active=test
+```
+
+Run all tests:
+```bash
+./mvnw test
+```
 
 ---
 

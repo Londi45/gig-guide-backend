@@ -66,7 +66,7 @@ class AuthServiceImplTest {
                 .email("staff@test.com")
                 .fullName("Staff One")
                 .role("STAFF")
-                .clubId(1L)
+                .clubId("1")
                 .build();
 
         activeVerifiedUser = User.builder()
@@ -87,7 +87,7 @@ class AuthServiceImplTest {
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPw");
 
         Clubs savedClub = new Clubs();
-        savedClub.setId(1L);
+        savedClub.setId("1");
         when(clubRepository.save(any())).thenReturn(savedClub);
 
         User savedUser = User.builder().id(1L).email("owner@test.com").role(Role.CLUB_OWNER).build();
@@ -109,8 +109,8 @@ class AuthServiceImplTest {
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPw");
 
         Clubs club = new Clubs();
-        club.setId(1L);
-        when(clubRepository.findById(1L)).thenReturn(Optional.of(club));
+        club.setId("1");
+        when(clubRepository.findById("1")).thenReturn(Optional.of(club));
 
         User savedUser = User.builder().id(2L).email("staff@test.com").role(Role.STAFF).build();
         when(userRepository.save(any())).thenReturn(savedUser);
