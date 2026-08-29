@@ -37,16 +37,17 @@ GigGuide is a backend REST API for managing gigs, events, clubs, and attendees. 
 - **Spring DevTools** — hot reload during development
 
 ### Database Migrations
-- **Flyway 11.7.2** — versioned database migrations (`db.migration/`)
-
-### Testing
-- **Spring Boot Test** — unit and integration testing
-
-### Database Migrations
 - **Flyway 11.7.2** — versioned schema migrations (`src/main/resources/db.migration/`)
+
+### Messaging
+- **Apache Kafka** — asynchronous event streaming
+- **Spring Kafka** — Kafka integration (producer, consumer, `KafkaTemplate`)
 
 ### Logging
 - **SLF4J + Logback** — structured logging on all controllers and services via `@Slf4j`
+
+### Testing
+- **Spring Boot Test** — unit and integration testing
 
 ---
 
@@ -63,6 +64,11 @@ src/main/java/com/Gig/Guide/GigGuide/
 ├── Mapper/             # Entity <-> DTO mappers
 ├── Enums/              # Application enums (Role, EventStatus)
 ├── Exceptions/         # Global exception handling
+├── Kafka/
+│   ├── events/         # Event payload classes (ClubCreatedEvent, etc.)
+│   ├── producer/       # Kafka producers (ClubEventProducer)
+│   ├── consumer/       # Kafka consumers (ClubEventConsumer)
+│   └── job/            # Scheduled retry jobs (FailedKafkaEventRetryJob)
 └── utils/              # Utility classes (JWT token util)
 ```
 
@@ -235,6 +241,67 @@ src/main/java/com/Gig/Guide/GigGuide/
 ---
 
 ### Clubs — `/api/clubs`
+
+**POST /api/clubs** _(ADMIN only)_
+```json
+// Request
+{
+  "name": "Club Havana",
+  "description": "Premium nightclub in the CBD",
+  "email": "info@havana.co.za",
+  "phone": "+27111234567",
+  "website": "https://havana.co.za",
+  "openingHours": "21:00",
+  "closingHours": "04:00",
+  "dressCode": "Smart Casual",
+  "hasParking": true,
+  "hasVIPArea": true,
+  "capacity": 500,
+  "address": {
+    "location": "12 Long Street",
+    "city": "Cape Town",
+    "province": "Western Cape",
+    "country": "South Africa",
+    "postalCode": "8001"
+  },
+  "socials": {
+    "facebookLink": "https://facebook.com/clubhavana",
+    "instagramLink": "https://instagram.com/clubhavana",
+    "twitterLink": "https://twitter.com/clubhavana",
+    "tiktokLink": "https://tiktok.com/@clubhavana"
+  }
+}
+
+// Response 201
+{
+  "id": 1,
+  "name": "Club Havana",
+  "description": "Premium nightclub in the CBD",
+  "email": "info@havana.co.za",
+  "phone": "+27111234567",
+  "website": "https://havana.co.za",
+  "openingHours": "21:00",
+  "closingHours": "04:00",
+  "dressCode": "Smart Casual",
+  "hasParking": true,
+  "hasVIPArea": true,
+  "capacity": 500,
+  "active": true,
+  "address": {
+    "location": "12 Long Street",
+    "city": "Cape Town",
+    "province": "Western Cape",
+    "country": "South Africa",
+    "postalCode": "8001"
+  },
+  "socials": {
+    "facebookLink": "https://facebook.com/clubhavana",
+    "instagramLink": "https://instagram.com/clubhavana",
+    "twitterLink": "https://twitter.com/clubhavana",
+    "tiktokLink": "https://tiktok.com/@clubhavana"
+  }
+}
+```
 
 **GET /api/clubs?page=0&size=10&sort=name**
 ```json
@@ -622,19 +689,38 @@ Flyway manages all schema changes. Migration scripts live in `src/main/resources
 
 | Version | Script | Description |
 |---------|--------|-------------|
-| V1 | `V1__create_addresses_table.sql` | `addresses` table with city/province/country indexes |
+| V1 | `V1__create_addresses_table.sql` | `addresses` table — indexes on `city`, `province`, `country` |
 | V2 | `V2__create_socials_table.sql` | `socials` table |
 | V3 | `V3__create_owners_table.sql` | `owners` legacy table |
-| V4 | `V4__create_clubs_table.sql` | `clubs` table with active/name indexes |
-| V5 | `V5__create_users_table.sql` | `users` table with email, role, token indexes |
-| V6 | `V6__add_owner_to_clubs.sql` | Adds `owner_user_id` FK to clubs (circular dep fix) |
-| V7 | `V7__create_refresh_tokens_table.sql` | `refresh_tokens` with token/user/expiry indexes |
-| V8 | `V8__create_events_table.sql` | `events` with status/club/date indexes + CHECK constraints |
-| V9 | `V9__create_entry_types_table.sql` | `entry_types` with event_id index |
-| V10 | `V10__create_discounts_table.sql` | `discounts` with validity window indexes |
-| V11 | `V11__create_staff_assignments_table.sql` | `staff_assignments` with unique (event, user) constraint |
-| V12 | `V12__create_check_in_audit_entries_table.sql` | `check_in_audit_entries` with event+timestamp index |
-| V13 | `V13__create_my_app_users_table.sql` | `my_app_user` legacy table |
+| V4 | `V4__create_clubs_table.sql` | `clubs` table — indexes on `active`, `name`, `address_id` |
+| V5 | `V5__create_users_table.sql` | `users` table — indexes on `email`, `username`, `club_id + role`, verification/reset tokens |
+| V6 | `V6__add_owner_to_clubs.sql` | Adds `owner_user_id` FK + index to clubs |
+| V7 | `V7__create_refresh_tokens_table.sql` | `refresh_tokens` — indexes on `token`, `user_id`, `expires_at` |
+| V8 | `V8__create_events_table.sql` | `events` — indexes on `status + start_date`, `club_id`, `club + status`, `club + date` |
+| V9 | `V9__create_entry_types_table.sql` | `entry_types` — index on `event_id` |
+| V10 | `V10__create_discounts_table.sql` | `discounts` — indexes on `event_id`, `valid_from`, `valid_until` |
+| V11 | `V11__create_staff_assignments_table.sql` | `staff_assignments` — indexes on `event_id`, `user_id` + unique constraint |
+| V12 | `V12__create_check_in_audit_entries_table.sql` | `check_in_audit_entries` — indexes on `event + timestamp`, `event + action`, `performed_by` |
+| V13 | `V13__create_my_app_users_table.sql` | `my_app_user` legacy table — index on `email` |
+| V14 | `V14__create_failed_kafka_events_table.sql` | `failed_kafka_events` — indexes on `resolved`, `topic`, `failed_at` |
+
+### Indexes Summary
+
+| Table | Index | Purpose |
+|-------|-------|---------|
+| `addresses` | `city`, `province`, `country` | Filter clubs by location |
+| `clubs` | `active`, `name`, `address_id`, `owner_user_id` | Active club listings and lookups |
+| `users` | `email`, `username` | Auth and security filter lookups |
+| `users` | `club_id`, `club_id + role` | Load staff list per club |
+| `users` | `verification_token`, `password_reset_token` | Token-based email flows (partial indexes) |
+| `refresh_tokens` | `token`, `user_id`, `expires_at` | Token validation and cleanup |
+| `events` | `status + start_date_time` | Public published event browsing |
+| `events` | `club_id`, `club_id + status`, `club_id + start` | Dashboard queries with filters |
+| `entry_types` | `event_id` | Load entry types with parent event |
+| `discounts` | `event_id`, `valid_from`, `valid_until` | Load and filter active discounts |
+| `staff_assignments` | `event_id`, `user_id` | Staff lookup per event and per user |
+| `check_in_audit_entries` | `event_id + timestamp DESC` | Paginated audit log per event |
+| `check_in_audit_entries` | `event_id + action`, `performed_by` | Count check-ins and staff activity |
 
 > All scripts use `IF NOT EXISTS` so they are safe to run against a database that already has tables created by Hibernate.
 
@@ -660,6 +746,109 @@ INFO  Check-in recorded - eventId=10, gender=MALE, liveTotal=121
 
 ---
 
+## Kafka — Asynchronous Event Streaming
+
+When a club is created, a `ClubCreatedEvent` is published asynchronously to the `club-created` Kafka topic. The HTTP response returns immediately — Kafka delivery happens in the background.
+
+### Flow
+
+```
+POST /api/clubs
+      │
+      ▼
+ClubServiceImpl.createClub()
+      │
+      ├── saves club to PostgreSQL  ──► returns 201 to client
+      │
+      └── ClubEventProducer.publishClubCreated()
+                │
+                ▼
+         Kafka Topic: club-created
+                │
+                ▼
+         ClubEventConsumer (@KafkaListener)
+         logs event / triggers downstream actions
+```
+
+### Event Payload — `ClubCreatedEvent`
+
+```json
+{
+  "clubId": 1,
+  "clubName": "Club Havana",
+  "email": "info@havana.co.za",
+  "city": "Cape Town",
+  "createdAt": "2026-08-29T14:00:00"
+}
+```
+
+### Kafka Classes
+
+| Class | Package | Purpose |
+|-------|---------|---------|
+| `ClubCreatedEvent` | `Kafka/events` | Event payload serialized to JSON |
+| `ClubEventProducer` | `Kafka/producer` | Publishes events using `KafkaTemplate` |
+| `ClubEventConsumer` | `Kafka/consumer` | Listens on `club-created` with `@KafkaListener` |
+| `FailedKafkaEventRetryJob` | `Kafka/job` | Scheduled retry job for failed deliveries |
+
+### Kafka Config (`application.properties`)
+
+```properties
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+spring.kafka.consumer.group-id=gig-guide-group
+spring.kafka.consumer.auto-offset-reset=earliest
+app.kafka.topic.club-created=club-created
+```
+
+---
+
+## Failed Kafka Events
+
+When Kafka delivery fails (broker down, network error, etc.), the event is not lost — it is persisted to the `failed_kafka_events` table with the full JSON payload and error message.
+
+### `failed_kafka_events` Table
+
+| Column | Description |
+|--------|-------------|
+| `id` | Auto-generated primary key |
+| `topic` | Kafka topic the message was intended for |
+| `message_key` | Message key (e.g. clubId) |
+| `payload` | Full event serialized as JSON |
+| `error_message` | The Kafka error that caused the failure |
+| `retry_count` | How many retry attempts have been made |
+| `resolved` | `true` once the event is successfully re-published |
+| `failed_at` | Timestamp of the original failure |
+| `last_retried_at` | Timestamp of the most recent retry attempt |
+
+### Retry Job
+
+`FailedKafkaEventRetryJob` runs every **2 hours** via `@Scheduled`. It:
+1. Loads all records where `resolved = false`
+2. Deserializes the JSON payload back to the correct event class
+3. Re-publishes to Kafka synchronously
+4. Marks `resolved = true` on success, increments `retry_count` on failure
+5. Retries **indefinitely** — never gives up until Kafka accepts the message
+
+```properties
+# Retry interval (2 hours)
+app.kafka.retry.fixed-rate-ms=7200000
+```
+
+### Running Kafka Locally (Docker)
+
+```bash
+docker-compose up -d
+```
+
+This starts:
+- **Zookeeper** on port `2181`
+- **Kafka broker** on port `9092`
+- **Kafka UI** at `http://localhost:8090` — browse topics and messages visually
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -667,6 +856,7 @@ INFO  Check-in recorded - eventId=10, gender=MALE, liveTotal=121
 - Maven 3.8+
 - PostgreSQL 14+
 - Redis 6+
+- Docker (for Kafka)
 
 ### Environment Setup
 
@@ -688,6 +878,11 @@ spring.data.redis.host=localhost
 spring.data.redis.port=6379
 ```
 
+Start Kafka locally:
+```bash
+docker-compose up -d
+```
+
 ### Run the App
 
 ```bash
@@ -702,4 +897,12 @@ Once running, visit:
 
 ```
 http://localhost:8080/swagger-ui/index.html
+```
+
+### Kafka UI
+
+Browse topics and messages at:
+
+```
+http://localhost:8090
 ```
