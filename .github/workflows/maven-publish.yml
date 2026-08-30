@@ -52,7 +52,7 @@ jobs:
           cache: maven
 
       - name: Build and run tests
-        run: mvn -B -e clean verify
+        run: mvn -B -e clean verify -Dsurefire.useFile=false
         env:
           # Database — matches what application-test.properties expects
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/gig_guide_db
