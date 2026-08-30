@@ -20,7 +20,8 @@ jobs:
         env:
           POSTGRES_DB: gig_guide_db
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_PASSWORD: ci_test_password
+          # NOTE: password is intentionally hardcoded — this is a throwaway CI container
         ports:
           - 5432:5432
         options: >-
@@ -56,7 +57,7 @@ jobs:
           # Database — matches what application-test.properties expects
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/gig_guide_db
           SPRING_DATASOURCE_USERNAME: postgres
-          SPRING_DATASOURCE_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SPRING_DATASOURCE_PASSWORD: ci_test_password
           # Redis
           SPRING_DATA_REDIS_HOST: localhost
           SPRING_DATA_REDIS_PORT: 6379
