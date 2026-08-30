@@ -52,7 +52,7 @@ jobs:
           cache: maven
 
       - name: Build and run tests
-        run: mvn -B clean verify
+        run: mvn -B -e clean verify
         env:
           # Database — matches what application-test.properties expects
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/gig_guide_db
@@ -78,8 +78,14 @@ jobs:
       - name: List test reports
         if: always()
         run: |
-          echo "===== FILES ====="
+          echo "===== SUREFIRE REPORTS ====="
           find target/surefire-reports -type f -print || true
+          echo "===== DUMP FILES ====="
+          find target/surefire-reports -name "*.dump" -exec cat {} \; || true
+          echo "===== GIGGUIDE APP TEST ====="
+          cat target/surefire-reports/com.Gig.Guide.GigGuide.GigGuideApplicationTests.txt || true
+          echo "===== CLUB INTEGRATION TEST ====="
+          cat "target/surefire-reports/com.Gig.Guide.GigGuide.Controllers.ClubControllerIntegrationTest.txt" || true
 
       - name: Upload test reports
         if: always()
