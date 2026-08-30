@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -17,18 +18,18 @@ import java.util.Map;
 /**
  * Kafka configuration — makes the app resilient when Kafka is unavailable.
  *
+ * Only loaded when Kafka listeners are enabled (i.e. not in the test profile).
+ *
  * Key behaviours:
  *  - Consumer error handler: if a message fails to process, retry up to 3 times
  *    with a 2-second gap before giving up on that specific message (not the whole listener).
  *  - AckMode.BATCH: only commit offsets when a full batch processes cleanly.
  *  - The consumer container keeps running and reconnects automatically when
  *    Kafka comes back — no app restart needed.
- *
- * The noisy WARN logs are handled in application.properties by setting
- * NetworkClient to ERROR level and adding reconnect backoff settings.
  */
 @Slf4j
 @Configuration
+@ConditionalOnProperty(name = "spring.kafka.listener.auto-startup", havingValue = "true", matchIfMissing = true)
 public class KafkaConfig {
 
     @Value("${spring.kafka.bootstrap-servers}")

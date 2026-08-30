@@ -2,6 +2,7 @@ package com.Gig.Guide.GigGuide.Kafka.consumer;
 
 import com.Gig.Guide.GigGuide.Kafka.events.ClubCreatedEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@ConditionalOnProperty(name = "spring.kafka.listener.auto-startup", havingValue = "true", matchIfMissing = true)
 public class ClubEventConsumer {
 
     @KafkaListener(

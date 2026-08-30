@@ -44,7 +44,7 @@ public class ClubServiceImpl implements ClubService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
+    @Autowired(required = false)
     private ClubEventProducer clubEventProducer;
 
     @Override
@@ -61,14 +61,16 @@ public class ClubServiceImpl implements ClubService {
         log.info("Club created - id={}, name={}", saved.getId(), saved.getName());
 
         // Publish event to Kafka asynchronously — does not block the HTTP response
-        ClubCreatedEvent event = ClubCreatedEvent.builder()
-                .clubId(saved.getId())
-                .clubName(saved.getName())
-                .email(saved.getEmail())
-                .city(saved.getAddress() != null ? saved.getAddress().getCity() : null)
-                .createdAt(LocalDateTime.now())
-                .build();
-        clubEventProducer.publishClubCreated(event);
+        if (clubEventProducer != null) {
+            ClubCreatedEvent event = ClubCreatedEvent.builder()
+                    .clubId(saved.getId())
+                    .clubName(saved.getName())
+                    .email(saved.getEmail())
+                    .city(saved.getAddress() != null ? saved.getAddress().getCity() : null)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            clubEventProducer.publishClubCreated(event);
+        }
 
         return ClubMapper.mapToDTO(saved);
     }
