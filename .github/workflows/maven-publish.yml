@@ -52,7 +52,7 @@ jobs:
           cache: maven
 
       - name: Build and run tests
-        run: mvn -B -e clean verify -Dsurefire.useFile=false
+        run: mvn -B -e clean verify -Dsurefire.useFile=false "-Djwt.secret=${JWT_SECRET}"
         env:
           # Database — matches what application-test.properties expects
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/gig_guide_db
@@ -61,7 +61,8 @@ jobs:
           # Redis
           SPRING_DATA_REDIS_HOST: localhost
           SPRING_DATA_REDIS_PORT: 6379
-          # JWT
+          # JWT — passed explicitly so jwt.secret resolves (JWT_SECRET env var does NOT
+          # auto-map to custom properties via Spring relaxed binding)
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           # Mail — use dummy values in CI; email sending is not tested
           SPRING_MAIL_HOST: localhost
