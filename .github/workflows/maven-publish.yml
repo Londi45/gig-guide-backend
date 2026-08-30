@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - develop
-
   pull_request:
     branches:
       - main
@@ -27,28 +26,22 @@ jobs:
           cache: maven
 
       - name: Build and run tests
-        run: mvn -B clean verify -e
+        run: mvn -B clean verify
 
-      - name: Show Surefire reports
+      - name: List test reports
         if: always()
         run: |
-          echo "===== SUREFIRE REPORT FILES ====="
+          echo "===== FILES ====="
           find target/surefire-reports -type f -print || true
 
-          echo "===== SUREFIRE TXT REPORTS ====="
-          for file in target/surefire-reports/*.txt; do
-            echo "===== $file ====="
-            cat "$file"
-          done
-
-      - name: Upload JUnit test results
+      - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: junit-test-results
-          path: |
-            target/surefire-reports/
-            target/failsafe-reports/
+          name: surefire-reports
+          path: target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload application JAR
         if: success()
