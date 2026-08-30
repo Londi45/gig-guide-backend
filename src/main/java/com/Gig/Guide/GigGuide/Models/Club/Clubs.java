@@ -34,6 +34,8 @@ public class Clubs implements Serializable {
     private String closingHours;
     private String dressCode;
     private boolean hasParking;
+
+    @Column(name = "hasviparea")
     private boolean hasVIPArea;
     private int capacity;
     private boolean active;
