@@ -68,11 +68,16 @@ jobs:
           SPRING_MAIL_PORT: 25
           SPRING_MAIL_USERNAME: ci@example.com
           SPRING_MAIL_PASSWORD: unused
-          # Kafka — disable listeners; producer bootstrap points nowhere but is not used in unit tests
-          SPRING_KAFKA_LISTENER_AUTO_STARTUP: false
+          # Kafka — disable listeners and point producer nowhere
+          SPRING_KAFKA_LISTENER_AUTO_STARTUP: "false"
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: localhost:9092
           SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: localhost:9092
           SPRING_KAFKA_CONSUMER_BOOTSTRAP_SERVERS: localhost:9092
-          # Active profile for integration tests
+          SPRING_KAFKA_ADMIN_FAIL_FAST: "false"
+          # Kafka topic config
+          APP_KAFKA_TOPIC_CLUB_CREATED: club-created
+          APP_KAFKA_RETRY_FIXED_RATE_MS: "7200000"
+          # Active profile
           SPRING_PROFILES_ACTIVE: test
 
       - name: List test reports
